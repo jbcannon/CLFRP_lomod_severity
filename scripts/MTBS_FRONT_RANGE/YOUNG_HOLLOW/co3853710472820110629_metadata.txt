@@ -1,0 +1,82 @@
+Supplemental Fire Metadata 
+
+Fire Information 
+MTBS Fire ID: CO3853710472820110629
+Fire Name (if known): YOUNG HOLLOW
+Date of Fire: June 29, 2011
+Type of Assessment:  Initial
+Acres within Fire Perimeter: 2423.6
+
+Required spatial adjustment for co-registration of pre-fire NBR to post-fire NBR 
+X-shift adjustment: 0 meters (relative to post-fire NBR) 
+Y-shift adjustment: 0 meters (relative to post-fire NBR) 
+
+Landsat Path and Row: 33/33
+Pre-Fire Landsat Date/Scene ID: Landsat 5 TM; June 17, 2011 / 5033033001116810
+Post-Fire Landsat Date/Scene ID: Landsat 5 TM; July 03, 2011 / 5033033001118410
+
+Output Dataset Projection Albers Equal Area
+Units: Meters
+Datum: NAD83
+Spheroid: GRS80
+1st Standard Parallel: 29 30 00
+2nd Standard Parallel: 45 30 00
+Central Meridian: -96 00 00
+Latitude of Origin: 23 00 00
+False Northing: 0
+False Easting: 0
+
+Image Subset Corner Coordinates (center of pixel, projected meters) 
+ULX: -759600
+ULY: 1764510
+LRX: -748620
+LRY: 1754370
+Rows: 339
+Columns: 367
+Pixel size: 30 meters 
+
+Bounding Box 
+North Latitude: 38.57262 (38 34 21.4365915653) 
+South Latitude: 38.53499 (38 32 05.97602621184) 
+East Longitude: -104.71809 (-104 43 05.12908690798) 
+West Longitude: -104.77790 (-104 46 40.4364522036) 
+
+Latitude and Longitude within Fire Perimeter 
+Latitude: 38.555227 (38 33 18.8172) 
+Longitude: -104.746391 (-104 44 47.0076) 
+
+Fire Perimeter Generation Method: Manual
+
+dNBR offset value used to calculate RdNBR: 14
+
+Burn severity thresholds 
+No Data Threshold:  -970
+Increased Greeness:  -150
+Low Threshold:  50
+Moderate Threshold:  9999
+High Threshold:  9999
+
+
+Product List: 
+CO3853710472820110629_20110617_L5_refl.tif
+Subset of Landsat scene used for pre-fire image (Bands 1-5, 7; Unsigned 8-bit GeoTIFF) 
+
+CO3853710472820110629_20110703_L5_refl.tif
+Subset of Landsat scene used for post-fire image (Bands 1-5, 7; Unsigned 8-bit GeoTIFF) 
+
+CO3853710472820110629_20110617_20110703_dnbr.tif
+dNBR used for burn severity analysis and mapping; subset to the fire area (Signed 16-bit GeoTIFF) 
+
+CO3853710472820110629_20110617_20110703_dnbr6.tif
+Thematic dNBR; Derived by thresholding dNBR subset (8-bit GeoTIFF) 
+
+CO3853710472820110629_20110617_20110703_rdnbr.tif
+Relative dNBR; subset to the fire area (Signed 16-bit GeoTIFF) 
+
+CO3853710472820110629_20110617_20110703_burn_bndy.shp
+Perimeter of detectable fire area derived from satellite imagery (ESRI shapefile) 
+
+CO3853710472820110629_20110617_20110703_mask.shp
+Mask for clouds, shadow, snow or anomalies intersecting fire area (ESRI shapefile) 
+
+Processing Comments:  

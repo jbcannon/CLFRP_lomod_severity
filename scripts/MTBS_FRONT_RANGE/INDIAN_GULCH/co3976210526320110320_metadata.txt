@@ -1,0 +1,82 @@
+Supplemental Fire Metadata 
+
+Fire Information 
+MTBS Fire ID: CO3976210526320110320
+Fire Name (if known): INDIAN GULCH FIRE
+Date of Fire: March 20, 2011
+Type of Assessment:  Initial
+Acres within Fire Perimeter: 1640.0
+
+Required spatial adjustment for co-registration of pre-fire NBR to post-fire NBR 
+X-shift adjustment: 0 meters (relative to post-fire NBR) 
+Y-shift adjustment: 0 meters (relative to post-fire NBR) 
+
+Landsat Path and Row: 34/32
+Pre-Fire Landsat Date/Scene ID: Landsat 5 TM; April 18, 2010 / 5034032001010810
+Post-Fire Landsat Date/Scene ID: Landsat 5 TM; April 21, 2011 / 5034032001111110
+
+Output Dataset Projection Albers Equal Area
+Units: Meters
+Datum: NAD83
+Spheroid: GRS80
+1st Standard Parallel: 29 30 00
+2nd Standard Parallel: 45 30 00
+Central Meridian: -96 00 00
+Latitude of Origin: 23 00 00
+False Northing: 0
+False Easting: 0
+
+Image Subset Corner Coordinates (center of pixel, projected meters) 
+ULX: -790350
+ULY: 1902690
+LRX: -780930
+LRY: 1893210
+Rows: 317
+Columns: 315
+Pixel size: 30 meters 
+
+Bounding Box 
+North Latitude: 39.77022 (39 46 12.7958984973) 
+South Latitude: 39.74011 (39 44 24.4065171905) 
+East Longitude: -105.24801 (-105 14 52.8509370768) 
+West Longitude: -105.28822 (-105 17 17.5880319288) 
+
+Latitude and Longitude within Fire Perimeter 
+Latitude: 39.755363 (39 45 19.3068) 
+Longitude: -105.268852 (-105 16 07.86719999998) 
+
+Fire Perimeter Generation Method: Manual
+
+dNBR offset value used to calculate RdNBR: -20
+
+Burn severity thresholds 
+No Data Threshold:  -970
+Increased Greeness:  -150
+Low Threshold:  40
+Moderate Threshold:  293
+High Threshold:  570
+
+
+Product List: 
+CO3976210526320110320_20100418_L5_refl.tif
+Subset of Landsat scene used for pre-fire image (Bands 1-5, 7; Unsigned 8-bit GeoTIFF) 
+
+CO3976210526320110320_20110421_L5_refl.tif
+Subset of Landsat scene used for post-fire image (Bands 1-5, 7; Unsigned 8-bit GeoTIFF) 
+
+CO3976210526320110320_20100418_20110421_dnbr.tif
+dNBR used for burn severity analysis and mapping; subset to the fire area (Signed 16-bit GeoTIFF) 
+
+CO3976210526320110320_20100418_20110421_dnbr6.tif
+Thematic dNBR; Derived by thresholding dNBR subset (8-bit GeoTIFF) 
+
+CO3976210526320110320_20100418_20110421_rdnbr.tif
+Relative dNBR; subset to the fire area (Signed 16-bit GeoTIFF) 
+
+CO3976210526320110320_20100418_20110421_burn_bndy.shp
+Perimeter of detectable fire area derived from satellite imagery (ESRI shapefile) 
+
+CO3976210526320110320_20100418_20110421_mask.shp
+Mask for clouds, shadow, snow or anomalies intersecting fire area (ESRI shapefile) 
+
+Processing Comments:  
