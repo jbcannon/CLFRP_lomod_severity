@@ -19,7 +19,7 @@
 
 #######################################START SET UP##########################################
 #---> Load libraries
-packages <- c('raster', 'rgdal', 'rgeos', 'maptools')
+packages <- c('raster', 'rgdal', 'rgeos', 'maptools', 'igraph')
 for(package in packages){
   if(suppressMessages(!require(package,character.only=T))){
     install.packages(package,repos='https://cran.mtu.edu/')
@@ -38,7 +38,7 @@ neighbor_rule <- 4 # 4 or 8 neighboring cells used for clump detection
 
 #---> Input link table to retreive filenames associated with each fire. This is an input fire list 
 #     that corresponds to data included for each fire.
-link_table <- read.csv('filename_link.csv')
+link_table <- read.csv('MTBS_FRONT_RANGE/filename_link.csv')
 
 #---> Remove the following fires which have no suitable areas following analysis (i.e., throw an error)
 removal.list <- c('Galena', 'Springer', 'Wetmore', 'Crystal Fire', 'Burning Tree', 'Fourmile Canyon')
@@ -48,7 +48,7 @@ link_table <- subset(link_table, ! fire_name %in% removal.list)
 
 ######################################START ANALYSIS#########################################
 #---> Remove completed samples from link_table
-complete <- list.files('DATA/OUTPUT/POTENTIAL_SAMPLES/', pattern = '*.pdf') #If pdf already exists...
+complete <- list.files('potential_samples/', pattern = '*.pdf') #If pdf already exists...
 complete <- substr(complete, start = 0, stop = nchar(complete) - nchar('_SAMPLING.pdf'))
 link_table <- subset(link_table, ! folder_name %in% complete) #then remove from link table
 
@@ -60,8 +60,8 @@ for(fire_nm in link_table$fire_name)
   
   #---> Get filenames for selected fire in fire_nm
   link_attrib <- subset(link_table, fire_name == fire_nm) 
-  severity_filename <- paste('DATA/INPUT/MTBS_FRONT_RANGE/', link_attrib$folder_name, '/', link_attrib$file_base, '_dnbr6.tif', sep = '')
-  boundary_filename <- paste('DATA/INPUT/MTBS_FRONT_RANGE/', link_attrib$folder_name, '/', link_attrib$file_base, '_burn_bndy.shp', sep = '')
+  severity_filename <- paste('MTBS_FRONT_RANGE/', link_attrib$folder_name, '/', link_attrib$file_base, '_dnbr6.tif', sep = '')
+  boundary_filename <- paste('MTBS_FRONT_RANGE/', link_attrib$folder_name, '/', link_attrib$file_base, '_burn_bndy.shp', sep = '')
   
   #---> Use filenames to load severity raster and boundary
   print(paste('Loading ', fire_nm, ' data.', sep = ''))
@@ -82,20 +82,20 @@ for(fire_nm in link_table$fire_name)
   fire_NA <- fire_sev == 6 #identify areas where severity is not known (cloud/SLC failure)
   sample_exclude <- fire_NA | fire_largeHiSev #get areas with NA or large severe patch
   sample_exclude <- sample_exclude * 1 #create raster grid, 1 = exclusion area
-  writeRaster(sample_exclude, 'DATA/INPUT/tmp_raster', format = 'ascii', overwrite = TRUE) #write raster
+  writeRaster(sample_exclude, 'tmp_raster', format = 'ascii', overwrite = TRUE) #write raster
   
   #---> convert EXCLUSION RASTER to INCLUSION POLYGON using python script (per Gannon)
   print('Eliminating hi severity areas from sample')
   cwd <- getwd()
   #cwd <- gsub('/', '\\', cwd, fixed = TRUE)
-  py_exe_path <- 'C:/Python27/ArcGIS10.4/python.exe'
+  py_exe_path <- 'C:/Python27/ArcGIS10.7/python.exe'
   py_script_path <- 'raster2polygon.py'
   sys_call <- paste(py_exe_path, py_script_path, cwd, sep = ' ') 
   system(sys_call) #call python script with argument of pathname
-  include_poly <- readOGR(dsn = 'DATA/OUTPUT/tmp_poly.shp', layer = 'tmp_poly', verbose = FALSE) #load exclusion polygon
+  include_poly <- readOGR(dsn = 'tmp_poly.shp', layer = 'tmp_poly', verbose = FALSE) #load exclusion polygon
   include_poly <- subset(include_poly, GRIDCODE == 0) #remove non-exclusion areas (GRIDCODE = 0)
   include_poly <- gBuffer(include_poly, width = -1) #buffer out 1m to alleviate self-intersection problems
-  unlink(c('DATA/INPUT/tmp*', 'DATA/OUTPUT/tmp*', 'DATA/OUTPUT/log'), recursive = TRUE) #cleanup temp files
+  unlink(c('DATA/INPUT/tmp*', 'tmp*', 'log'), recursive = TRUE) #cleanup temp files
   
   #---> create fishnet on top of fire perimeter using spatial grain
   grid_r <- raster(extent(fire_bnd), resolution = edge_size, crs = proj4string(fire_bnd))
@@ -118,7 +118,7 @@ for(fire_nm in link_table$fire_name)
   
   ######################################START OUTPUTS##########################################
   #---> output shapefile of sampling areas
-  shp_path <- paste('DATA/OUTPUT/POTENTIAL_SAMPLES/SHAPEFILES/', link_attrib$folder_name, '_SAMPLING.shp', sep = '')
+  shp_path <- paste('potential_samples/shp/', link_attrib$folder_name, '_SAMPLING.shp', sep = '')
   print(c('Exporting sampling area shapefile to:', shp_path))
   layer_nm <- paste(link_attrib$folder_name, '_SAMPLING', sep = '')
   writeOGR(grid_sel, shp_path, layer = layer_nm, driver = 'ESRI Shapefile', overwrite = TRUE)
@@ -127,7 +127,7 @@ for(fire_nm in link_table$fire_name)
   ######################################START GRAPHICS#########################################
   #--> Output plot map containing exclusion areas (hatched) and sample areas (outlined)
   print('Exporting map')
-  img_path <- paste('DATA/OUTPUT/POTENTIAL_SAMPLES/', link_attrib$folder_name, '_SAMPLING.pdf', sep = '')
+  img_path <- paste('potential_samples', link_attrib$folder_name, '_SAMPLING.pdf', sep = '')
   #create exclusion areas
   out <- gDifference(fire_bnd, grid_sel)
   hole_fix <- mask(fire_sev, grid_sel)
@@ -152,8 +152,8 @@ for(fire_nm in link_table$fire_name)
 }
 
   #---> Merge all files into one pdf using pdf-toolkit
-  dir <- paste(getwd(), 'DATA/OUTPUT/POTENTIAL_SAMPLES', sep = '/')
-  pdfs <- list.files('DATA/OUTPUT/POTENTIAL_SAMPLES/', pattern = '*.pdf')
+  dir <- paste(getwd(), 'potential_samples', sep = '/')
+  pdfs <- list.files('potential_samples', pattern = '*.pdf')
   pdfs <- sort(pdfs)
   pdfs <- paste(dir, "/", pdfs, sep = '')
   pdfs <- paste(as.vector(pdfs), sep = ' ', collapse = ' ')
