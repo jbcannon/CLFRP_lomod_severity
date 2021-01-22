@@ -1,4 +1,4 @@
-1. Classified raster folder contains 3m resolution raster grid data for classified remotely sensed imagery of 16 restoration treatments completed between 2010 and 2017 as part of the Front Range Collaborative Forest Landscape Restoration Program.
+1. Classified raster folder contains 3m resolution raster grid data for classified remotely sensed imagery of 15 restoration treatments completed between 2010 and 2017 as part of the Front Range Collaborative Forest Landscape Restoration Program.
 
 0 = opening
 1 = canopy
