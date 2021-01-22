@@ -41,8 +41,8 @@ neighbor_rule <- 4 # 4 or 8 neighboring cells used for clump detection
 link_table <- read.csv('MTBS_FRONT_RANGE/filename_link.csv')
 
 #---> Remove the following fires which have no suitable areas following analysis (i.e., throw an error)
-removal.list <- c('Galena', 'Springer', 'Wetmore', 'Crystal Fire', 'Burning Tree', 'Fourmile Canyon')
-link_table <- subset(link_table, ! fire_name %in% removal.list)
+#removal.list <- c('Fern Lake', 'Galena', 'Springer', 'Wetmore', 'Crystal Fire', 'Burning Tree', 'Fourmile Canyon')
+#link_table <- subset(link_table, ! fire_name %in% removal.list)
 
 ########################################END SET UP###########################################
 
@@ -55,11 +55,15 @@ link_table <- subset(link_table, ! folder_name %in% complete) #then remove from 
 #---> Loop through all fires in fire table. For each loop, perform analysis, and output shapefile and map 
 for(fire_nm in link_table$fire_name)
 {
+  completed = list.files('potential_samples/')
+
+  
   print(paste(fire_nm, ': process initiated', sep = ''))
   t0 <- Sys.time()
   
   #---> Get filenames for selected fire in fire_nm
   link_attrib <- subset(link_table, fire_name == fire_nm) 
+  if(link_attrib$folder_name %in% completed) next
   severity_filename <- paste('MTBS_FRONT_RANGE/', link_attrib$folder_name, '/', link_attrib$file_base, '_dnbr6.tif', sep = '')
   boundary_filename <- paste('MTBS_FRONT_RANGE/', link_attrib$folder_name, '/', link_attrib$file_base, '_burn_bndy.shp', sep = '')
   
@@ -82,43 +86,32 @@ for(fire_nm in link_table$fire_name)
   fire_NA <- fire_sev == 6 #identify areas where severity is not known (cloud/SLC failure)
   sample_exclude <- fire_NA | fire_largeHiSev #get areas with NA or large severe patch
   sample_exclude <- sample_exclude * 1 #create raster grid, 1 = exclusion area
-  writeRaster(sample_exclude, 'tmp_raster', format = 'ascii', overwrite = TRUE) #write raster
   
-  #---> convert EXCLUSION RASTER to INCLUSION POLYGON using python script (per Gannon)
-  print('Eliminating hi severity areas from sample')
-  cwd <- getwd()
-  #cwd <- gsub('/', '\\', cwd, fixed = TRUE)
-  py_exe_path <- 'C:/Python27/ArcGIS10.7/python.exe'
-  py_script_path <- 'raster2polygon.py'
-  sys_call <- paste(py_exe_path, py_script_path, cwd, sep = ' ') 
-  system(sys_call) #call python script with argument of pathname
-  include_poly <- readOGR(dsn = 'tmp_poly.shp', layer = 'tmp_poly', verbose = FALSE) #load exclusion polygon
-  include_poly <- subset(include_poly, GRIDCODE == 0) #remove non-exclusion areas (GRIDCODE = 0)
-  include_poly <- gBuffer(include_poly, width = -1) #buffer out 1m to alleviate self-intersection problems
-  unlink(c('DATA/INPUT/tmp*', 'tmp*', 'log'), recursive = TRUE) #cleanup temp files
+  sample_exclude = crop(sample_exclude, fire_bnd)
+  sample_exclude = rasterToPolygons(sample_exclude, dissolve=TRUE)
+  sample_exclude = subset(sample_exclude, layer == 1)
   
-  #---> create fishnet on top of fire perimeter using spatial grain
-  grid_r <- raster(extent(fire_bnd), resolution = edge_size, crs = proj4string(fire_bnd))
-  grid_r[] <- 1:ncell(grid_r)
-  grid_shp <- rasterToPolygons(grid_r)
+  if(length(sample_exclude)> 0) {
+    #---> create fishnet on top of fire perimeter using spatial grain
+    grid_r <- raster(extent(fire_bnd), resolution = edge_size, crs = proj4string(fire_bnd))
+    grid_r[] <- 1:ncell(grid_r)
+    grid_shp <- rasterToPolygons(grid_r)
+    grid_cells_out = grid_shp[sample_exclude,]$layer
+    grid_out = subset(grid_shp, ! layer %in% grid_cells_out)
+    
+    grid_out = gBuffer(grid_out,width=0); fire_bnd = gBuffer(fire_bnd, width=0)
+    grid_sel = intersect(grid_out, fire_bnd)
+    grid_sel <- gUnaryUnion(grid_sel)
+    grid_sel <- sp::disaggregate(grid_sel)
+    grid_sel$area_ha <- gArea(grid_sel, byid = TRUE) / 10000
+    grid_sel <- subset(grid_sel, area_ha >= plot_size)
+  } else grid_sel = fire_bnd
   
-  #---> Dissolve continous grid cells and eliminate areas containing exclusions
-  print('Creating sampling areas')
-  grid_sel <- intersect(grid_shp, include_poly)
-  grid_sel$area <- gArea(grid_sel, byid = TRUE)
-  grid_sel <- subset(grid_sel, area  == edge_size^2)
-  grid_sel <- intersect(grid_sel, fire_bnd)
-  grid_sel <- gUnaryUnion(grid_sel)
-  grid_sel <- sp::disaggregate(grid_sel)
-  grid_sel <- SpatialPolygonsDataFrame(grid_sel, data.frame(ID = 1:length(grid_sel)))
-  grid_sel$area_ha <- gArea(grid_sel, byid = TRUE) / 10000
-  grid_sel <- subset(grid_sel, area_ha >= plot_size)
-  grid_sel$ID <- 1:length(grid_sel)
   #######################################END ANALYSIS##########################################
   
   ######################################START OUTPUTS##########################################
   #---> output shapefile of sampling areas
-  shp_path <- paste('potential_samples/shp/', link_attrib$folder_name, '_SAMPLING.shp', sep = '')
+  shp_path <- paste('potential_samples/', link_attrib$folder_name, '_SAMPLING.shp', sep = '')
   print(c('Exporting sampling area shapefile to:', shp_path))
   layer_nm <- paste(link_attrib$folder_name, '_SAMPLING', sep = '')
   writeOGR(grid_sel, shp_path, layer = layer_nm, driver = 'ESRI Shapefile', overwrite = TRUE)
@@ -127,19 +120,15 @@ for(fire_nm in link_table$fire_name)
   ######################################START GRAPHICS#########################################
   #--> Output plot map containing exclusion areas (hatched) and sample areas (outlined)
   print('Exporting map')
-  img_path <- paste('potential_samples', link_attrib$folder_name, '_SAMPLING.pdf', sep = '')
+  img_path <- paste('potential_samples/', link_attrib$folder_name, '_SAMPLING.pdf', sep = '')
   #create exclusion areas
-  out <- gDifference(fire_bnd, grid_sel)
-  hole_fix <- mask(fire_sev, grid_sel)
-  hole_fix@legend@colortable[1] <- NA
   pdf(img_path, width = 7, height = 7)
   if(length(grid_sel) > 0) {sampling_ha <- round(gArea(grid_sel) / 10000)} else {sampling_ha = 0}
   fire_ha <- round(gArea(fire_bnd) / 10000)
   plot(fire_bnd, main = c(paste(fire_nm, ' (', fire_ha, ' ha)' , sep = ''), paste('sample = ', sampling_ha, ' ha', sep = '')))
   plot(fire_sev, add = TRUE)
-  plot(out, add = TRUE, density = 30)
+  #plot(out, add = TRUE, density = 30)
   plot(fire_bnd, add = TRUE, lwd = 3)
-  plot(hole_fix, add = TRUE)
   plot(grid_sel, border = 'white', add = TRUE, lwd = 5)
   plot(grid_sel, border = 'black', lty = 2, lwd = 1, add = TRUE)
   axis(1); axis(2); box()
